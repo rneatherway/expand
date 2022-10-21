@@ -17,50 +17,56 @@ func TestExpand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var file *token.File
+	fileSet.Iterate(func(f *token.File) bool { file = f; return false })
+	if file.Name() != "testdata/example.go" {
+		t.Fatal(file.Name())
+	}
+
 	cases := []struct {
 		input    Selection
 		expected Selection
 	}{
 		{
-			input:    Selection{14, 11, 14, 12},
-			expected: Selection{14, 9, 14, 14},
+			input:    Selection{167, 167},
+			expected: Selection{165, 170},
 		},
 		{
-			input:    Selection{5, 13, 5, 13},
-			expected: Selection{5, 13, 5, 14},
+			input:    Selection{40, 40},
+			expected: Selection{40, 41},
 		},
 		{
-			input:    Selection{5, 13, 5, 14},
-			expected: Selection{5, 10, 5, 18},
+			input:    Selection{40, 41},
+			expected: Selection{37, 45},
 		},
 		{
-			input:    Selection{5, 10, 5, 18},
-			expected: Selection{5, 9, 5, 32},
+			input:    Selection{37, 45},
+			expected: Selection{36, 59},
 		},
 		{
-			input:    Selection{10, 22, 10, 23},
-			expected: Selection{10, 19, 10, 24},
+			input:    Selection{140, 142},
+			expected: Selection{139, 144},
 		},
 		{
-			input:    Selection{10, 19, 10, 24},
-			expected: Selection{10, 7, 10, 24},
+			input:    Selection{139, 144},
+			expected: Selection{127, 144},
 		},
 		{
-			input:    Selection{10, 7, 10, 24},
-			expected: Selection{10, 3, 10, 24},
+			input:    Selection{127, 144},
+			expected: Selection{123, 144},
 		},
 		{
-			input:    Selection{10, 3, 10, 24},
-			expected: Selection{9, 23, 11, 3},
+			input:    Selection{123, 144},
+			expected: Selection{119, 147},
 		},
 		{
-			input:    Selection{9, 23, 11, 3},
-			expected: Selection{9, 2, 11, 3},
+			input:    Selection{119, 147},
+			expected: Selection{98, 147},
 		},
 	}
 
 	for _, tc := range cases {
-		actual := expandSelection(&fileSet, a, tc.input)
+		actual := expandSelection(file, a, tc.input)
 		if actual != tc.expected {
 			t.Errorf("expandSelection(%v) = %v, expected %v", tc.input, actual, tc.expected)
 		}

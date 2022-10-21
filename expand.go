@@ -3,48 +3,31 @@ package expand
 import (
 	"go/ast"
 	"go/token"
+
+	"golang.org/x/tools/go/ast/astutil"
 )
 
 type Selection struct {
-	StartLine int
-	StartCol  int
-	EndLine   int
-	EndCol    int
+	Start int
+	End   int
 }
 
 func expandSelection(
-	fileSet *token.FileSet,
-	file *ast.File,
-	s Selection,
+	file *token.File,
+	fileAst *ast.File,
+	selection Selection,
 ) Selection {
-	var nextNode ast.Node
-	ast.Inspect(file, func(n ast.Node) bool {
-		if n == nil {
-			return false
-		}
+	path, _ := astutil.PathEnclosingInterval(fileAst, file.Pos(selection.Start), file.Pos(selection.End))
 
-		start := fileSet.PositionFor(n.Pos(), false)
-		end := fileSet.PositionFor(n.End(), false)
+	n := path[0]
+	if len(path) >= 2 && n.Pos() == token.Pos(selection.Start) && n.End() == token.Pos(selection.End) {
+		n = path[1]
+	}
 
-		if start.Line > s.StartLine ||
-			(start.Line == s.StartLine && start.Column > s.StartCol) ||
-			end.Line < s.EndLine ||
-			(end.Line == s.EndLine && end.Column < s.EndCol) ||
-			(start.Line == s.StartLine && start.Column == s.StartCol && end.Line == s.EndLine && end.Column == s.EndCol) {
-
-			return false
-		}
-
-		// fmt.Printf("%T %d:%d-%d:%d\n", n, start.Line, start.Column, end.Line, end.Column)
-
-		nextNode = n
-		return true
-	})
+	// fmt.Printf("%T %d-%d\n", n, n.Pos(), n.End())
 
 	return Selection{
-		StartLine: fileSet.PositionFor(nextNode.Pos(), false).Line,
-		StartCol:  fileSet.PositionFor(nextNode.Pos(), false).Column,
-		EndLine:   fileSet.PositionFor(nextNode.End(), false).Line,
-		EndCol:    fileSet.PositionFor(nextNode.End(), false).Column,
+		Start: int(n.Pos()),
+		End:   int(n.End()),
 	}
 }
